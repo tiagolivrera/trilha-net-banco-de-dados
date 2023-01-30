@@ -99,5 +99,157 @@ WHERE Id = 12
 ROLLBACK
 ```
 
+### 8. Contando a quantidade de registros com COUNT
+
+Em tabelas com muitos registros, fica inviável saber a quantidade de entradas apenas "rolando" pela interface do Management Studio, então podemos usar a função COUNT para retornar a quantidade de registros, e podemos usar a função WHERE para saber o número de entradas que atendam determinadas características.
+
+```sql
+SELECT COUNT(*) QuantidadeProdutos FROM Produtos
+
+SELECT COUNT(*) QuantidadeProdutosTamanhoM FROM Produtos WHERE Tamanho = 'M'
+```
+
+OBS.: Os campos 'QuantidadeProdutos' e 'QuantidadeProdutosTamanhoM' são opcionais, servem para criar um nome para a coluna com o resultado da função COUNT.
 
 
+### 9. Somando valores com SUM
+
+A função SUM recebe como entrada uma coluna da tabela cujos valores sejam numéricos e retorna a sua soma. Semelhante às funções anteriores, podemos usar WHERE para somar registros que atendam a determinadas características.
+
+```sql
+SELECT SUM(Preco) PrecoTotal FROM Produtos
+
+SELECT SUM(Preco) PrecoProdutosTamanhoM FROM Produtos WHERE Tamanho = 'M'
+```
+
+### 10. Calculando máximo, mínimo e média com MAX, MIN e AVG
+
+Semelhante a função SUM, podemos calcular os valores máximo, mínimo e média com MAX, MIN e AVG respectivamente, em colunas com valores numéricos.
+
+```sql
+SELECT MAX(Preco) ProdutoMaisCaro FROM Produtos
+
+SELECT MAX(Preco) ProdutoMaisCaroTamanhoM FROM Produtos WHERE Tamanho = 'M'
+
+SELECT MIN(Preco) ProdutoMaisBarato FROM Produtos
+
+SELECT MIN(Preco) ProdutoMaisBaratoTamanhoM FROM Produtos WHERE Tamanho = 'M'
+
+SELECT AVG(Preco) MediaPrecoProdutos FROM Produtos
+```
+
+### 11. Concatenando colunas
+
+Podemos usar a chamada da função SELECT para definir como os dados serão retornados. No exemplo abaixo, é possível concatenar as colunas 'Nome' e 'Cor' em uma nova coluna denominada 'NomeCorProduto' com ambos os dados.
+
+```sql
+SELECT 
+	'Nome: ' + Nome + ' Cor: ' + Cor NomeCorProduto
+FROM Produtos
+```
+
+### 12. Tornando nomes maiúsculos ou minúsculos com UPPER e LOWER
+
+```sql
+SELECT 
+	UPPER(Nome) NomeMaiusculo,
+	LOWER(Cor) CorMinusculo
+FROM Produtos
+```
+
+### 13. Adicionando uma nova coluna a tabela
+
+Utilizando o Management Studio, é possível adicionar uma nova coluna de forma visual, ou alternativamente, podemos utilizar a função ADD para adicionar uma nova coluna alterando a tabela.
+
+```sql
+ALTER TABLE Produtos
+ADD DataCadastro DATETIME2
+```
+
+### 14. Formatando uma data
+
+Às vezes é necessário obter um formato de data em um padrão diferente do que foi gravado no banco de dados, então podemos usar a função FORMAT passando um formato definido para retornar o resultado desejado.
+
+```sql
+SELECT 
+	UPPER(Nome) NomeMaiusculo,
+	LOWER(Cor) CorMinusculo,
+	FORMAT(DataCadastro, 'dd-MM-yyyy') DataCadastroPadraoBR
+FROM Produtos
+```
+
+### 15. Agrupando dados usando GROUP BY
+
+No exemplo abaixo, queremos uma tabela que mostre os tamanhos dos produtos e a quantidade de produtos de cada tamanho, ordenado pela quantidade. O operador '<>' é igual a '!=', e significa que os produtos onde o campo tamanho é vazio não serão incluídos no resultado.
+
+```sql
+SELECT
+	Tamanho,
+	COUNT(*) Quantidade
+FROM Produtos
+WHERE Tamanho <> ''
+GROUP BY Tamanho 
+ORDER BY Quantidade
+```
+
+### 16. Criando uma tabela
+
+Na situação onde, por exemplo, desejamos acrescentar um endereço ao cliente, podemos alterar a tabela cliente para que contenha os novos dados. Porém, caso os clientes antigos não tenham endereço, a nova tabela terá vários campos nulos, e um cliente com mais de um endereço criaria uma redundância desnecessária. Para resolver esse problema, podemos criar uma tabela de endereços, com o id do cliente sendo uma chave estrangeira dessa nova tabela.
+
+```sql
+CREATE TABLE Enderecos (
+	Id int PRIMARY KEY IDENTITY(1,1) NOT NULL,
+	IdCliente int NULL,
+	Rua varchar(255) NULL,
+	Bairro varchar(255) NULL,
+	Cidade varchar(255) NULL,
+	Estado char(2) NULL,
+
+	CONSTRAINT FK_Enderecos_Clientes FOREIGN KEY(IdCliente)
+	REFERENCES Clientes(Id)
+)
+```
+
+### 17. Realizando um JOIN
+
+De acordo com o caso anterior, agora ha duas tabelas contendo as informações completas dos clientes (Clientes e Enderecos). Porém, podemos retornar essas informações no mesmo resultado unindo as tabelas usando JOIN através de um campo em comum entre elas, que geralmente trata-se do conjunto chave primária e chave estrangeira. No exemplo abaixo, para obter as informações completas do cliente de id = 4, une-se as tabelas usando a chave primária Id de clientes e a chave estrangeira IdCliente de enderecos.
+
+```sql
+SELECT * FROM Clientes
+INNER JOIN Enderecos ON Clientes.Id = Enderecos.IdCliente
+WHERE Clientes.Id = 4
+```
+
+Porém, usando essa abordagem, o resultado terá o id de ambas as tabelas. Para especificar como desejamos a resposta, podemos explicitar os campos de interesse:
+
+```sql
+SELECT
+	Clientes.Nome,
+	Clientes.Sobrenome,
+	Clientes.Email,
+	Enderecos.Rua,
+	Enderecos.Bairro,
+	Enderecos.Cidade,
+	Enderecos.Estado
+FROM 
+	Clientes
+INNER JOIN Enderecos ON Clientes.Id = Enderecos.IdCliente
+WHERE Clientes.Id = 4
+```
+
+Utilizando C e E como alias para Clientes e Enderecos, podemos definir a query da seguinte forma:
+
+```sql
+SELECT
+	C.Nome,
+	C.Sobrenome,
+	C.Email,
+	E.Rua,
+	E.Bairro,
+	E.Cidade,
+	E.Estado
+FROM 
+	Clientes C
+INNER JOIN Enderecos E ON C.Id = E.IdCliente
+WHERE C.Id = 4
+```

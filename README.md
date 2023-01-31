@@ -253,3 +253,177 @@ FROM
 INNER JOIN Enderecos E ON C.Id = E.IdCliente
 WHERE C.Id = 4
 ```
+
+### 18. Adicionando regras com ***constraints***
+
+Constraints são restrições criadas no banco de dados para impedir que dados inválidos sejam cadastrados, garantindo a sua qualidade e integridade. 
+
+1. **NOT NULL**
+
+   A constraint NOT NULL faz com que o banco de dados não aceite dados cujo determinado campo seja nulo ou omitido. No exemplo abaixo, os campos Id, Nome e Preco possuem essa constraint, e portanto, são obrigatórios.
+
+
+    ```sql
+    CREATE TABLE Produtos (
+        Id int IDENTITY(1,1) PRIMARY KEY NOT NULL,
+        Nome varchar(255) NOT NULL,
+        Cor varchar(50) NULL,
+        Preco decimal(13, 2) NOT NULL,
+        Tamanho varchar(5) NULL,
+        Genero char(1) NULL
+    )
+    ```
+
+2. **UNIQUE**
+
+    A constraint UNIQUE identifica de forma única cada registro em uma tabela de um banco de dados. No exemplo acima, a coluna Nome pode ser considerada UNIQUE (cada produto tem um único nome). Nesse caso, podemos alterar a tabela Produtos da seguinte forma:
+
+    ```sql
+    ALTER TABLE Produtos
+    ADD UNIQUE(Nome)
+    ```
+
+3. **CHECK**
+
+    A constraint CHECK define uma condição que cada linha deve atender. Por exemplo, no caso acima, pode-se atribuir qualquer letra para o gênero, mas para restringir para três casos (unissex, masculino e feminino), podemos escrever a seguinte condição com CHECK:
+
+    ```sql
+    ALTER TABLE Produtos
+    ADD CHECK(Genero = 'U' OR Genero = 'M' OR Genero = 'F')
+    ```
+
+    Podemos ainda atribuir nomes às constraints da seguinte forma:
+
+    ```sql
+    ALTER TABLE Produtos
+    ADD CONSTRAINT CHK_ColunaGenero CHECK(Genero = 'U' OR Genero = 'M' OR Genero = 'F')
+    ```
+
+4. **DEFAULT**
+
+    A constraint DEFAULT é usada para inserir um valor padrão especificado em uma coluna. O valor padrão será adicionado a todos os novos registros caso nenhum outro valor seja especificado na hora de inserir dados. No exemplo acima, digamos que por padrão, a coluna DataCadastro da tabela Produtos recebe a data atual. Portanto, podemos alterar a tabela da seguinte forma:
+
+    ```sql
+    ALTER TABLE Produtos
+    ADD DEFAULT GETDATE() FOR DataCadastro
+    ```
+
+5. ***PRIMARY KEY e FOREIGN KEY***
+
+    A constraint PRIMARY KEY (Chave Primária) identifica de forma única cada registro em uma tabela de banco de dados. Ela deve sempre conter valores únicos e geralmente se refere ao id. Uma FOREIGN KEY (Chave Estrangeira) em uma tabela é um campo que aponta para uma chave primária em outra tabela. Desta forma, é usada para criar os relacionamentos entre as tabelas no banco de dados.
+
+### 19. Apagando uma ***constraint***
+
+Digamos que em uma determinada etapa do desenvolvimento, definimos que o gênero do produto só poderia ser definido por três letras, assim como explicamos anteriormente:
+
+```sql
+ALTER TABLE Produtos
+ADD CONSTRAINT CHK_ColunaGenero CHECK(Genero = 'U' OR Genero = 'M' OR Genero = 'F')
+```
+
+Porém, descobriu-se que essa regra não faz mais sentido. Então, podemos remover a regra da seguinte forma:
+
+```sql
+ALTER TABLE Produtos
+DROP CONSTRAINT CHK_ColunaGenero
+```
+
+Caso a constraint não tenha sido nomeada, será necessário descobrir qual foi o nome que o banco de dados atribuiu a mesma.
+
+
+### 20. Criando ***Stored Procedures***
+
+Stored procedures são funções que utilizamos para otimizar o processo de tarefas repetitivas, como inserção de registros. Abaixo há um exemplo de procedure para inserção de um novo produto no banco de dados:
+
+```sql
+CREATE PROCEDURE InserirNovoProduto
+@Nome varchar(255),
+@Cor varchar(50),
+@Preco decimal,
+@Tamanho varchar(5),
+@Genero char(1)
+
+AS
+
+INSERT INTO Produtos (Nome, Cor, Preco, Tamanho, Genero)
+VALUES (@Nome, @Cor, @Preco, @Tamanho, @Genero)
+```
+
+Com a procecdure acima, para inserir um novo produto podemos fazer:
+
+```sql
+EXEC InserirNovoProduto
+    'Nome do novo produto',
+    'COLORIDO',
+    50,
+    'G',
+    'U'
+```
+
+Alternativamente, podemos escrever:
+
+```sql
+EXEC InserirNovoProduto
+    @Nome = 'Nome do novo produto',
+    @Cor = 'COLORIDO',
+    @Preco = 50,
+    @Tamanho = 'G',
+    @Genero = 'U'
+```
+
+Também é possível criar uma procedure para facilitar uma busca recorrente no lugar do SELECT. Por exemplo, a seguinte query:
+
+```sql
+SELECT * FROM Produtos WHERE Tamanho = 'M'
+```
+
+Pode ser escrita na forma de procedure da seguinte maneira:
+
+```sql
+CREATE PROCEDURE ObterProdutosPorTamanho
+@TamanhoProduto VARCHAR(5)
+
+AS
+
+SELECT * FROM Produtos WHERE Tamanho = @TamanhoProduto
+```
+
+Então podemos executar a procedure da seguinte forma:
+
+```sql
+EXEC ObterProdutosPorTamanho 'M'
+```
+
+Para obter todos os produtos, podemos escrever a seguinte procedure:
+
+```sql
+CREATE PROCEDURE ObterTodosProdutos
+AS
+SELECT * FROM Produtos
+```
+
+### 21. Functions
+
+Functions são semelhantes a procedures no sentido de que podem ser salvas diretamente no banco de dados, porém aceitam apenas entradas como parâmetros e sempre devem ter retorno. Por exemplo, digamos que queremos uma função que calcule um desconto no preço do produto. Podemos escrevê-la da seguinte forma:
+
+```sql
+CREATE FUNCTION CalcularDesconto(@Preco DECIMAL(13, 2), @Porcentagem INT)
+RETURNS DECIMAL(13,2)
+
+BEGIN
+    RETURN @Preco - @Preco / 100 * @Porcentagem
+END
+```
+
+Aplicando um desconto de 10% em todos os produtos de tamanho M, temos:
+
+```sql
+SELECT
+    Nome,
+    Preco,
+    dbo.CalcularDesconto(Preco, 10) PrecoComDesconto
+FROM Produtos WHERE Tamanho = 'M'
+```
+
+
+

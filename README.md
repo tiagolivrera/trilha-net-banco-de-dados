@@ -425,5 +425,46 @@ SELECT
 FROM Produtos WHERE Tamanho = 'M'
 ```
 
+### 22. Comandos DDL (*Data Definition Language*)
+
+1. **CREATE TABLE**
+    Sintaxe:
+    ```sql
+    CREATE TABLE nome_tabela (campo e tipo campo)
+    ```
+    Exemplo:
+    ```sql
+    CREATE TABLE tb_pessoa(
+        id bigint,
+        nome varchar(50),
+        endereco text,
+        telefone int
+    );
+    ```
+
+2. **DROP TABLE**
+    Sintaxe:
+    ```sql
+    DROP TABLE nome_tabela
+    ```
+    Exemplo:
+    ```sql
+    DROP TABLE tb_pessoa
+    ```
+
+3. **ALTER TABLE**
+    Sintaxe:
+    ```sql
+    ALTER TABLE nome_tabela
+    ```
+    Exemplo:
+    ```sql
+    ALTER TABLE tb_pessoa
+    ADD COLUMN sexo boolean; -- Postgres
+    ADD sexo BIT             -- SQL Server, não existe dado do tipo booleano
+    ```
+
+4. **TRUNCATE**
+
 
 
